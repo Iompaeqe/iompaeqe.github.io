@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ProjectW — Multiplayer Spell Arena · Metehan Göksel Kurtulan</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="index.html">Metehan Göksel Kurtulan</a>
+  <a href="index.html">Home</a>
+  <a href="pw.html">PW Framework</a>
+  <a class="active" href="projectw.html">ProjectW</a>
+  <a href="files/Metehan_Goksel_Kurtulan_CV_Gameplay_Programmer.pdf">CV</a>
+</div></nav>
+
+
+
+<header class="hero"><div class="wrap">
+  <div class="eyebrow">Solo project · Unreal Engine 5 · C++ · GAS · 2024–2025</div>
+  <h1>ProjectW — Multiplayer Spell Arena</h1>
+  <p class="lead">A round-based, last-man-standing spell arena for up to 12 players, inspired by the Warcraft III custom map <i>Warlock</i>. Players defeat each other by damaging them or knocking them off an arena that shrinks over time.</p>
+  <p class="muted" style="max-width:760px">Built solo while learning Unreal Engine 5, in C++ and Blueprint on top of the Gameplay Ability System. Core logic is in C++; ability behaviour and UI are in Blueprint for fast iteration. The visuals are deliberately simple (free, low-cost or AI-generated assets) so the time went into gameplay systems, networking and architecture. The ability code later became the <a href="pw.html">PW framework</a>.</p>
+  <div class="pills"><span>C++</span><span>Unreal Engine 5</span><span>GAS</span><span>Listen-server multiplayer</span><span>Steam sessions</span><span>UMG</span><span>Niagara</span></div>
+</div></header>
+
+<section id="videos"><div class="wrap">
+  <div class="eyebrow">Showcase</div>
+  <h2>Gameplay and lobby</h2>
+  <div class="two" style="margin-top:16px">
+    <div><div class="video"><iframe src="https://www.youtube-nocookie.com/embed/b0OfYstrt7s" title="ProjectW gameplay" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div><p class="muted">Gameplay</p></div>
+    <div><div class="video"><iframe src="https://www.youtube-nocookie.com/embed/Z8bkf3aqgkI" title="ProjectW menu and lobby" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div><p class="muted">Menu and lobby</p></div>
+  </div>
+  <div class="two" style="margin-top:24px">
+    <figure><video class="clip" src="media/pw-frostbolt.mp4" poster="img/pw-frostbolt-poster.jpg" autoplay loop muted playsinline></video><figcaption><b>Frostbolt</b>: a slowing projectile.</figcaption></figure>
+    <figure><video class="clip" src="media/pw-homing.mp4" poster="img/pw-homing-poster.jpg" autoplay loop muted playsinline></video><figcaption><b>Homing Ball</b>: seeks the nearest enemy.</figcaption></figure>
+    <figure><video class="clip" src="media/pw-shield.mp4" poster="img/pw-shield-poster.jpg" autoplay loop muted playsinline></video><figcaption><b>Shield</b>: reflects hostile spells back at their caster.</figcaption></figure>
+    <figure><video class="clip" src="media/pw-blink.mp4" poster="img/pw-blink-poster.jpg" autoplay loop muted playsinline></video><figcaption><b>Blink</b>: short-range teleport.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="systems"><div class="wrap">
+  <div class="eyebrow">Engineering</div>
+  <h2>Systems built</h2>
+  <div class="sys"><a href="#phases"><b>Round-based game mode</b><span>Modular phase system on a custom GameMode/GameState, easy to extend with new modes.</span></a><a href="#tags"><b>Tag-based gameplay</b><span>Spells, items, input, Niagara FX and UI all driven by GameplayTags and tag events.</span></a><a href="#inventory"><b>Inventory system</b><span>Replicated item equivalent of the AbilitySystemComponent, using fast array replication.</span></a><a href="#asc"><b>Extended Ability System Component</b><span>Tag-based ability lookup, input rebinding, upgrades, shop and UI integration.</span></a><a href="#shop"><b>Modular shop</b><span>Server-authoritative buying, selling and upgrading, with generated rich-text tooltips.</span></a><a href="#damage"><b>Unified damage model</b><span>One ExecCalc for every damage type, with tag-driven resistance and penetration.</span></a><a href="#projectiles"><b>Projectile framework</b><span>Knockback, reflection, piercing, spline paths and projectile-vs-projectile rules.</span></a><a href="#logging"><b>Structured logging</b><span>Context-rich logging macros and Blueprint-exposed JSON logging of any struct.</span></a><a href="#timers"><b>Timer management (WTM)</b><span>Thread-safe global named timers plus lifecycle-bound local timer macros.</span></a><a href="#sessions"><b>Extended Steam sessions</b><span>Lobby hosting, search, filtering and invites on top of Advanced Sessions.</span></a></div>
+  <h3 style="margin-top:32px">Also built</h3>
+  <ul class="clean">
+    <li><b>Scoreboard</b> tracking damage, kills and round performance.</li>
+    <li><b>Tagged effects component</b> that spawns and removes character VFX (such as burning) as gameplay tags change.</li>
+    <li><b>Drag-and-drop spell bar</b> that rebinds spell inputs.</li>
+    <li><b>Click-to-move component</b> replacing the default click-to-move behaviour.</li>
+    <li><b>Arena collapse:</b> tiles collapse during combat to shrink the play area.</li>
+    <li><b>Lobby settings</b> (starting gold, teams, rounds) set by the host and synced to all players.</li>
+  </ul>
+  <p class="note">Some purchased visual and audio assets mean the project can't be made public, but I'm happy to share more detail or walk through the code on request. The paid assets are purely visual and audio; none of the engineering depends on them.</p>
+</div></section>
+
+<section id="breakdowns" style="padding-top:20px"><div class="wrap">
+
+<div class="breakdown" id="phases">
+  <h3><span class="num">01</span>Round-based game mode</h3>
+  <p>Matches run through clear phases: <b>Loading</b> (waiting for every player), <b>Warmup</b> (try spells and items without damage), <b>Combat</b> and <b>Intermission</b> (shop and round reset). A custom <code>AWBaseGameMode</code> owns every transition through <code>SetGamePhase</code>, the GameState replicates the current <code>EGamePhase</code>, and an <code>OnGamePhaseChanged</code> delegate lets UI, scoreboard and VFX react without direct references.</p>
+  <ul><li>Easy to extend with new phases and modes.</li><li>Predictable transitions with proper authority handling.</li><li>Phases can be reset or interrupted cleanly, for example when a player disconnects.</li></ul>
+  <details><summary>Show code</summary><pre><code>void AWBaseGameMode::SetGamePhase(EGamePhase NewPhase)
+{
+    switch (CurrentGamePhase)
+    {
+        case EGamePhase::Combat:
+            HandleEndIntermissiont();
+            break;
+        // other phase cleanup logic
+    }
+
+    CurrentGamePhase = NewPhase;
+    PhaseStartTime = GetWorld()-&gt;GetTimeSeconds();
+
+    switch (NewPhase)
+    {
+        case EGamePhase::Warmup:
+            HandleCombat();
+            break;
+        // other phase entry logic
+    }
+
+    GetMyGameState()-&gt;MulticastCurrentGamePhase(NewPhase);
+}</code></pre></details>
+</div>
+
+<div class="breakdown" id="tags">
+  <h3><span class="num">02</span>Tag-based gameplay systems</h3>
+  <p>GameplayTags are the backbone of the game. Spell bar slots map to input tags; buffs, debuffs, conditions and cooldowns live on tags; UI and status icons are driven by tag queries; tags like <code>Status.Stun</code> switch animation states; and montage notifies send events such as <code>Event.Cast.Complete</code>, so animation and ability logic talk without hard references.</p>
+  <p>For example, when <code>Status.Debuff.Burn</code> is applied, the tagged effects component spawns a fire effect on the character and removes it when the tag goes away.</p>
+  <details><summary>Show code: tag-driven VFX</summary><pre><code>void UTaggedEffectComponent::OnTagApplied(FGameplayTag&amp; Tag, int32 Count)
+{
+	const WTags Tags = WTags::Get();
+
+	if (!Tag.MatchesTag(Tags.Status_Buff) &amp;&amp; !Tag.MatchesTag(Tags.Status_Debuff) &amp;&amp; !Tag.MatchesTag(Tags.Ability_Type_Passive)) return;
+
+	const bool bTryActive = Count &gt; 0;
+	const bool bEffectActive = ActiveEffects.Contains(Tag);
+
+	if (bTryActive &amp;&amp; bEffectActive) return;
+
+	if (bEffectActive &amp;&amp; !bTryActive)
+	{
+		UNiagaraComponent* Effect = ActiveEffects[Tag];
+		if (Effect)
+		{
+			Effect-&gt;SetAutoDestroy(true);
+			Effect-&gt;Deactivate();
+			ActiveEffects.Remove(Tag);
+		}
+	}
+
+	else if (!bEffectActive &amp;&amp; bTryActive)
+	{
+		const UTaggedNiagaraInfo* Data = UGameData::GetTaggedEffectsNiagaraData(this);
+		const FMyTaggedNiagaraInfo Info = Data-&gt;GetNiagaraSystemForTag(Tag);
+		if (!Info.Niagara)
+			return;
+		
+		const auto NiagaraSystem = UNiagaraFunctionLibrary::SpawnSystemAttached(Info.Niagara, OwnerMeshComp, USocketFunctions::GetSocketName(Info.Socket), FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, true);
+		
+		if (NiagaraSystem &amp;&amp; Info.bUseAbsoluteRotation)
+		{
+			NiagaraSystem-&gt;SetUsingAbsoluteRotation(true);
+			NiagaraSystem-&gt;SetWorldRotation(FRotator::ZeroRotator);
+			ActiveEffects.Add(Tag, NiagaraSystem);
+		}
+	}
+}</code></pre></details>
+  <div class="two"><figure><img src="img/pw-tagvfx.jpg" alt="Tag-to-Niagara mapping in a data asset." loading="lazy"><figcaption>Tag-to-Niagara mapping in a data asset.</figcaption></figure><figure><img src="img/pw-animnotify.jpg" alt="A montage notify sending &lt;code&gt;Event.Cast.Complete&lt;/code&gt; back to the ability." loading="lazy"><figcaption>A montage notify sending <code>Event.Cast.Complete</code> back to the ability.</figcaption></figure></div>
+</div>
+
+<div class="breakdown" id="inventory">
+  <h3><span class="num">03</span>Inventory system</h3>
+  <p>A lightweight, item-focused equivalent of the <code>AbilitySystemComponent</code>. <code>UInventorySystem</code> owns and replicates the inventory; <code>FInventorySlot</code> plays the role of <code>FGameplayAbilitySpec</code> (quantity, input tag, effect handles, use and clear logic); items are defined entirely in data. Replication uses <code>FFastArraySerializer</code> to keep bandwidth low, and the system is UI-agnostic.</p>
+  <details><summary>Show code: adding an item</summary><pre><code>bool UInventorySystem::AddItem(const FString&amp; ItemID, int32 Quantity)
+{
+	FInventorySlot* Slot = GetSlotOfItem(ItemID);
+	if (Slot)
+	{
+		Slot-&gt;Quantity += Quantity;
+		Inventory.MarkItemDirty(*Slot);
+		return true;
+	}
+
+	if (GetInventorySlots().Num() &lt; MaxItemCount)
+	{
+		FInventorySlot NewSlot = FInventorySlot(GetASC());
+		NewSlot.AssignItem(ItemID, Quantity);
+		NewSlot.SlotInputTag = GetFirstEmptyInput();
+		GetInventorySlots().Add(NewSlot);
+
+		Inventory.MarkItemDirty(NewSlot);
+		OnRep_InventorySlots();
+
+		return true;
+	}
+
+	return false;
+}</code></pre></details>
+  <figure style="max-width:640px"><video class="clip" src="media/pw-inventory.mp4" autoplay loop muted playsinline></video><figcaption>Items bound to input slots in the inventory bar.</figcaption></figure>
+</div>
+
+<div class="breakdown" id="asc">
+  <h3><span class="num">04</span>Extended Ability System Component</h3>
+  <p>A custom <code>UAbilitySystemComponent</code> subclass built for tag-based, rebinding-heavy gameplay, exposing a simple tag-based API to designers and to the UI and shop without direct dependencies.</p>
+  <ul>
+    <li><code>AddAbility</code> and <code>EquipAbility</code> grant abilities by tag and bind them to input tags, swapping when a slot is taken.</li>
+    <li><code>UpgradeAbility</code> / <code>DowngradeAbility</code> change level and replicate.</li>
+    <li>Input tags route pressed, held and released input straight to ability specs, including confirm and cancel for precasting.</li>
+    <li><code>HandleBuyAbility</code> / <code>HandleSellAbility</code> serve the shop.</li>
+  </ul>
+  <details><summary>Show code: equip and swap</summary><pre><code>void UMyAbilitySystemComponent::EquipAbility(const FGameplayTag&amp; AbilityTag, const FGameplayTag&amp; InputTag)
+{
+	if (!AbilityTag.IsValid() || !InputTag.IsValid()) return;
+
+	FGameplayTag TargetAbility = GetAbilityOfInput(InputTag);
+
+	if (TargetAbility.IsValid() &amp;&amp; TargetAbility.MatchesTagExact(AbilityTag)) return;
+
+	SetOrSwapInputOfAbility(AbilityTag, InputTag);
+}
+
+void UMyAbilitySystemComponent::SetOrSwapInputOfAbility(const FGameplayTag&amp; FirstAbilityTag, const FGameplayTag&amp; SecondInputTag)
+{
+	FGameplayAbilitySpec* FirstSpec = GetSpecOfAbility(FirstAbilityTag);
+	if (!FirstSpec) return;
+
+	if (FGameplayAbilitySpec* SecondSpec = GetSpecOfInput(SecondInputTag))
+	{
+		AssignInputToSpec(*SecondSpec, GetInputFromSpec(*FirstSpec));
+		MarkAbilitySpecDirty(*SecondSpec);
+	}
+
+	AssignInputToSpec(*FirstSpec, SecondInputTag);
+	MarkAbilitySpecDirty(*FirstSpec);
+
+	AbilitiesUpdated.Broadcast();
+}</code></pre></details>
+</div>
+
+<div class="breakdown" id="shop">
+  <h3><span class="num">05</span>Modular shop</h3>
+  <p>A replicated, server-authoritative shop for buying, selling, upgrading and downgrading spells and items during intermission, configured through data assets. The client validates first (valid item, enough gold, a free slot) to avoid pointless RPCs; the server repeats every check before deducting gold. Widget controllers keep the UI separate from game systems, and resell uses adjustable multipliers.</p>
+  <details><summary>Show code: buying a spell</summary><pre><code>void UPlayerEconomy::TryBuySpell(const FGameplayTag&amp; AbilityTag)
+{
+	checkPlayerState();
+	checkGamePhase();
+	checkSpellTag();
+	checkAbility();
+
+	const UPlayerEconomy* PE = PlayerState-&gt;GetPlayerEconomy();
+	float Price = Ability.Price.GetValueAtLevel(ASC-&gt;GetAbilityLevel(AbilityTag) + 1);
+
+	if (!ASC-&gt;GetHasEmptyAbilitySlot())
+		return;
+
+	if (PE-&gt;HasEnoughGold(Price))
+	{
+		ServerTryBuySpell(AbilityTag);
+	}
+}
+
+void UPlayerEconomy::ServerTryBuySpell_Implementation(const FGameplayTag&amp; AbilityTag)
+{
+	checkPlayerState();
+	checkGamePhase();
+	checkSpellTag();
+	checkAbility();
+
+	UPlayerEconomy* PE = PlayerState-&gt;GetPlayerEconomy();
+	float Price = Ability.Price.GetValueAtLevel(ASC-&gt;GetAbilityLevel(AbilityTag) + 1);
+
+	if (!ASC-&gt;GetHasEmptyAbilitySlot())
+		return;
+	
+	if (PE-&gt;RemoveGold(Price))
+	{
+		ASC-&gt;HandleBuyAbility(AbilityTag);
+	}
+}</code></pre></details>
+  <figure style="max-width:640px"><video class="clip" src="media/pw-shop.mp4" autoplay loop muted playsinline></video><figcaption>Buying and upgrading spells in the shop.</figcaption></figure>
+  <p style="margin-top:18px">Tooltips are generated from rich-text templates: placeholders such as <code>{_FireDmg0}</code> and <code>{_FireDmg1}</code> are filled with the current and next-level values, including damage read per damage-type tag.</p>
+  <div class="two"><figure><img src="img/pw-tooltip.jpg" alt="Generated tooltip showing current and next-level values." loading="lazy"><figcaption>Generated tooltip showing current and next-level values.</figcaption></figure><div></div></div>
+</div>
+
+<div class="breakdown" id="damage">
+  <h3><span class="num">06</span>Unified damage model</h3>
+  <p>All damage goes through one <code>UExecCalc_Damage</code>. Each damage type (fire, frost, lightning, arcane, radiant, physical) is a tag read from SetByCaller magnitudes and scaled by the target's resistance and the source's penetration, so new damage types or mechanics such as blocking or critical hits slot in without new classes.</p>
+  <details><summary>Show code: execution calculation</summary><pre><code>void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecutionParameters&amp; ExecutionParams, FGameplayEffectCustomExecutionOutput&amp; OutExecutionOutput) const
+{
+	...
+	TMap&lt;FGameplayTag, FGameplayEffectAttributeCaptureDefinition&gt; TagsToCaptureDefs;
+	TagsToCaptureDefs.Add(Tags.Attribute_Penetration_Fire, DamageStatics().FirePenetrationDef);
+	...
+
+	float Damage = 0.f;
+  for (const auto&amp; Pair : Tags.DamageTypesToBonuses)
+  {
+	  ...
+    float DamageTypeValue = Spec.GetSetByCallerMagnitude(DamageTypeTag, false);
+		GetCapAttrValue_Clamped(TResistance, TagsToCaptureDefs[ResistanceTag], EvalParams, 0, 100);
+		GetCapAttrValue_Clamped(SPenetration, TagsToCaptureDefs[PenetrationTag], EvalParams, 0, 100);
+		DamageTypeValue *= (100.f - TResistance + SPenetration) / 100;
+
+		Damage += DamageTypeValue;
+  }
+	
+	const FGameplayModifierEvaluatedData EvalData(UMyAttributeSet::GetIncomingDamageAttribute(), EGameplayModOp::Additive, Damage);
+	OutExecutionOutput.AddOutputModifier(EvalData);
+}</code></pre></details>
+</div>
+
+<div class="breakdown" id="projectiles">
+  <h3><span class="num">07</span>Projectile framework</h3>
+  <p>One spell definition can create completely different projectile behaviour by changing only the class and a few parameters.</p>
+  <ul>
+    <li><code>AWBaseSpellActor</code> replicates <code>SpellParams</code> and handles team relevance (enemy, ally, self) and collision filtering.</li>
+    <li><code>ABaseProjectile</code> handles overlaps, hit tracking with per-target cooldowns, multi-hit or destroy-after-N, and projectile-vs-projectile policies (ignore, destroy, bounce).</li>
+    <li><code>ASplineMovementProjectile</code> follows a spline scaled to end exactly at the target within range, then hands over to normal movement, for example on a bounce.</li>
+    <li>Interfaces prevent unwanted interactions, such as a gravity ball pulling in projectiles without triggering their effects.</li>
+    <li><code>SpellParams</code> carries ability context so clients can predict while the server applies effects.</li>
+  </ul>
+  <details><summary>Show code: overlap flow</summary><pre><code>void ABaseProjectile::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult&amp; SweepResult)
+{
+	if (!OtherActor || OtherActor == this) return;
+	if (ShouldIgnoreOverlap(OtherActor)) return;
+	if (IsActorProjectile(OtherActor))
+	{
+		HandleProjectileCollision(OtherActor);
+		return;
+	}
+	if (!CanHitTarget(OtherActor)) return;
+	if (!SpellParams || !SpellParams-&gt;SourceASC) return;
+	if (!CheckForCollisionTarget(OtherActor)) return;
+
+	LastHitActor = OtherActor;
+	LastHitTimes.FindOrAdd(OtherActor) = GetWorld()-&gt;GetTimeSeconds();
+	HitCount++;
+
+	if (HitCount == DestroyOnHit)
+		Sphere-&gt;SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	OnProjectileOverlap(OtherActor);
+}</code></pre></details>
+  <figure><img src="img/pw-spelltable.jpg" alt="The spell index: every spell classified by type, damage type, price and tags." loading="lazy"><figcaption>The spell index: every spell classified by type, damage type, price and tags.</figcaption></figure>
+  <div class="two"><figure><img src="img/pw-boomerang.jpg" alt="Boomerang: switching from a spline path to projectile movement." loading="lazy"><figcaption>Boomerang: switching from a spline path to projectile movement.</figcaption></figure><figure><img src="img/pw-firebolt.jpg" alt="Firebolt setup." loading="lazy"><figcaption>Firebolt setup.</figcaption></figure></div>
+</div>
+
+<div class="breakdown" id="logging">
+  <h3><span class="num">08</span>Structured logging</h3>
+  <p>Colour-coded on-screen and console logging macros with per-category output, contextual variants that add class, function and player identity (essential when debugging multiplayer), and toggles in a <code>UDebugConfig</code> so debug logging stays out of packaged builds. A Blueprint-exposed utility serializes any struct or object to JSON at runtime.</p>
+  <div class="two"><figure><img src="img/pw-log1.jpg" alt="Logging a struct as JSON from Blueprint." loading="lazy"><figcaption>Logging a struct as JSON from Blueprint.</figcaption></figure><figure><img src="img/pw-log2.jpg" alt="JSON output at runtime." loading="lazy"><figcaption>JSON output at runtime.</figcaption></figure></div>
+</div>
+
+<div class="breakdown" id="timers">
+  <h3><span class="num">09</span>Timer management (WTM)</h3>
+  <p>Two tiers of timers. <b>WTM</b> is a thread-safe global manager with named, unique timers (<code>Delay</code>, <code>DelayRepeat</code>, <code>Cancel</code>, <code>CancelAll</code>) that clean up after themselves. Lightweight <b>local timer macros</b> cover timers that should die with their owning actor, with no boilerplate.</p>
+  <details><summary>Show code: WTM usage</summary><pre><code>WTM::Delay(&quot;LavaWarning&quot;, 3.0f, []()
+{
+	LogScreen(&quot;Lava expanding!&quot;);
+});
+
+WTM::DelayRepeat(&quot;CheckHealth&quot;, 1.0f, []() -&gt; bool
+{
+	if (PlayerHealth &lt; 10.f)
+	{
+		WarnScreen(&quot;Low HP!&quot;);
+		return true; // Stop repeating
+	}
+	return false; // Keep repeating
+});</code></pre></details>
+</div>
+
+<div class="breakdown" id="sessions">
+  <h3><span class="num">10</span>Extended Steam sessions</h3>
+  <p>Session search, listing, hosting and invites, built on the Advanced Sessions plugin and extended for ProjectW's listen-server setup. Blueprint function libraries make custom session properties (game mode, lobby name, password, starting gold, rounds) safe to add and filter on without raw string keys, with local filtering of cached server data.</p>
+  <figure><img src="img/pw-sessions.jpg" alt="Session helper functions in use." loading="lazy"><figcaption>Session helper functions in use.</figcaption></figure>
+</div>
+
+</div></section>
+
+<footer><div class="wrap">© 2026 Metehan Göksel Kurtulan · <a href="mailto:metehankurtulan@gmail.com">metehankurtulan@gmail.com</a></div></footer>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PW — Gameplay Ability System Extension for UE5 · Metehan Göksel Kurtulan</title>
+<meta name="description" content="A modular C++ extension of Unreal Engine's Gameplay Ability System: abilities built from modules, full client-side prediction, genre-agnostic targeting, Live Tuning and an ability timeline.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="index.html">Metehan Göksel Kurtulan</a>
+  <a href="index.html">Home</a>
+  <a class="active" href="pw.html">PW Framework</a>
+  <a href="projectw.html">ProjectW</a>
+  <a href="files/Metehan_Goksel_Kurtulan_CV_Gameplay_Programmer.pdf">CV</a>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <div class="eyebrow">Solo project · C++ · Unreal Engine 5.6+ · in development, Fab release planned</div>
+  <h1>PW — Gameplay Ability System Extension</h1>
+  <p class="lead">Designers build networked, client-predicted abilities from reusable modules inside the ability's own details panel, see the result as a timeline straight away, and tune it live during play. It grew out of my multiplayer arena game, ProjectW.</p>
+  <div class="pills"><span>C++</span><span>GAS</span><span>Client-side prediction</span><span>Listen-server multiplayer</span><span>Niagara</span><span>Enhanced Input</span><span>Editor tooling</span><span>Python editor scripting</span><span>352 automated tests</span></div>
+  <div class="btns">
+    <a class="btn primary" href="#systems">See the systems</a>
+    <a class="btn" href="#timeline-section">Try the timeline</a>
+    <a class="btn" href="files/Metehan_Goksel_Kurtulan_Portfolio_PW_Framework.pdf">Portfolio PDF</a>
+  </div>
+  <div class="media">
+    <img src="img/play-earthshatter.jpg" alt="Earthshatter: a cracked ground slam around the caster and a shatter line running ahead toward two target dummies">
+    <span class="tag">Earthshatter, one of the 28 example abilities</span>
+  </div>
+</div></header>
+
+<section id="glance"><div class="wrap">
+  <div class="eyebrow">At a glance</div>
+  <h2>What PW is</h2>
+  <p class="lead">Unreal's Gameplay Ability System (GAS) handles replication, attributes and effects well, but every ability is still hand-written graph or C++ code. PW keeps GAS underneath and gives it a designer-facing layer: an ability is a list of modules, each doing one job, all of them networked and client-predicted.</p>
+  <div class="stats">
+    <div><b>25</b><span>ability modules</span></div>
+    <div><b>28</b><span>example abilities</span></div>
+    <div><b>352</b><span>automated tests</span></div>
+    <div><b>~40k</b><span>lines of C++, plus ~21k lines of tests</span></div>
+  </div>
+  <p style="margin-top:22px">It is a suite of plugins: the ability core and its editor module, spell actors (projectiles and other spawned actors), a teams and factions plugin for relationship-based targeting, and shared libraries for input, logging and timers. An example project of 28 abilities in a third-person shooter setup serves as both demo and templates.</p>
+</div></section>
+
+<section id="modules"><div class="wrap">
+  <div class="eyebrow">Architecture</div>
+  <h2>How an ability is built</h2>
+  <p class="lead">Each ability extends a base class that defines its lifecycle: instant, confirmed (aim, then confirm), channelling, charged or passive. Its behaviour is composed from three kinds of module:</p>
+  <div class="three" style="margin-top:20px">
+    <div class="box"><b>Action</b><br>What the ability does: instant effect, single or multiple spawned actors, projectiles, an aura, or starting other abilities.</div>
+    <div class="box"><b>Data</b><br>The values it uses: effects, radius, range, angle, duration, height and custom data. Each has a default plus named entries, and can read a curve table per level.</div>
+    <div class="box"><b>Control</b><br>How and when it happens: input, targeting, resolvers, aim previews, cast timing, movement, animation, VFX, tags and effects held while a window is open.</div>
+  </div>
+  <p style="margin-top:22px">Modules start and stop on a shared list of <i>moments</i>: the ability's own (Activated, Confirmed, Cast Completed, Ability Ended), other modules' (such as <i>Movement: Arrived</i>) and input moments. Control modules read data modules directly, so one Radius value drives targeting, the aim preview, the VFX size and Live Tuning.</p>
+</div></section>
+
+<section id="timeline-section"><div class="wrap">
+  <div class="eyebrow">Interactive</div>
+  <h2>From modules to a timeline</h2>
+  <p class="lead">The editor draws each ability's timeline from its modules. Pick an ability, then hover a module to see what it controls.</p>
+  <div id="timeline"></div>
+  <p class="muted" style="font-size:.85rem;margin-top:10px">Recreated for the web from the editor timelines of the example abilities.</p>
+</div></section>
+
+<section id="systems"><div class="wrap">
+  <div class="eyebrow">Engineering</div>
+  <h2>Systems in detail</h2>
+  <div class="sys">
+    <a href="#lifecycle"><b>Ability lifecycle and moments</b><span>Five ability classes, one event vocabulary, activation groups and commit rules.</span></a>
+    <a href="#data"><b>Modules and shared values</b><span>Data modules with named entries, reusable ability values, Blueprint access.</span></a>
+    <a href="#targeting"><b>Targeting for any genre</b><span>Sources, range policies, resolvers and a client-picked, server-checked lock-on.</span></a>
+    <a href="#precast"><b>Aim previews</b><span>Ground areas, target highlights, ghost actors and projectile paths while aiming.</span></a>
+    <a href="#actions"><b>Actions and spawn patterns</b><span>Projectiles, multi actors, auras and movement, laid out by pattern objects.</span></a>
+    <a href="#prediction"><b>Client-side prediction</b><span>Every module's work predicted, including spawned actors through stand-ins.</span></a>
+    <a href="#spellactors"><b>Spell actors</b><span>Actors that carry the ability's data, and end by letting their effects play out.</span></a>
+    <a href="#visuals"><b>Animation and VFX</b><span>Montages by tag, VFX sized by ability values, and points that follow actors.</span></a>
+    <a href="#editor"><b>Editor tools</b><span>Timeline, setup checks, Live Tuning during play and per-module debugging.</span></a>
+  </div>
+</div></section>
+
+<section id="breakdowns" style="padding-top:20px"><div class="wrap">
+
+<div class="breakdown" id="lifecycle">
+  <h3><span class="num">01</span>Ability lifecycle and moments</h3>
+  <p>Five ability classes cover the usual shapes of an ability: <b>Instant</b>, <b>Confirmed</b> (aim, then confirm with a key press or release), <b>Channeling</b> (ticks for a duration), <b>Charged</b> (hold to charge, release to fire) and <b>Passive</b>. Each one publishes its stages as <i>moments</i>, and every module setting that asks "when" picks from those moments instead of needing graph code.</p>
+  <ul>
+    <li><b>Activation groups</b> decide how abilities overlap: <i>Exclusive Replaceable</i> (a dodge may cancel this cast), <i>Exclusive Blocking</i> and <i>Independent</i> (an aura that runs beside anything). A group can change part-way, e.g. replaceable until confirmed, blocking after.</li>
+    <li><b>Commit rules</b> are settings, not code: when the cost is checked and paid, when the cooldown starts, and what interrupts the ability (a tag such as <code>ASC.State.Moving</code>, or entering combat).</li>
+    <li><b>No mandatory graph nodes:</b> charged and channelled abilities end themselves when their clock stops. A Blueprint graph is still available for custom logic, with helper nodes that read the modules.</li>
+  </ul>
+  <figure><img src="img/channel.jpg" alt="Editor timeline of Fire Nova: a 3 second channel with five ticks, animation, VFX on every tick, interrupted by moving" loading="lazy"><figcaption><b>Fire Nova's timeline in the editor:</b> a 3 s channel ticking every 0.75 s, its VFX pulsing on each tick, interrupted by moving, cooldown after.</figcaption></figure>
+  <div class="two">
+    <figure><img src="img/play-firenova.jpg" alt="Fire Nova in play: a ring of fire expanding around the caster" loading="lazy"><figcaption><b>Fire Nova in play:</b> each tick's ring grows with the Radius module.</figcaption></figure>
+    <figure class="narrow"><img src="img/m_events.jpg" alt="Moment picker listing ability, module and input moments" loading="lazy"><figcaption><b>The moment picker:</b> ability, module and input moments in one list.</figcaption></figure>
+  </div>
+</div>
+
+<div class="breakdown" id="data">
+  <h3><span class="num">02</span>Modules and shared values</h3>
+  <p>Data modules hold a <b>Default</b> value plus <b>named entries</b>: Meteor Shower has one Radius for targeting and an <i>Impact</i> entry for each meteor's blast. Only resolvers choose an entry, so a value is never duplicated across modules.</p>
+  <ul>
+    <li><b>Ability values</b> are small reusable expressions drawn Niagara-style in the details panel: a constant, a module's value, the ability level, a Blueprint variable, or Add / Subtract / Multiply / Divide of two of them. Fire Nova's ring is sized <i>Radius module − 80</i>, which no single multiplier could match across levels.</li>
+    <li>Runtime values keep a configured base and a per-cast current value, reset on every activation, with Get / Set nodes for graphs.</li>
+    <li>New modules can be written in C++ or Blueprint. One with moment settings gets its own timeline lane with no editor code: the timeline finds its moments by reflection, as the details panel does.</li>
+  </ul>
+  <div class="two">
+    <figure><img src="img/m_stack.jpg" alt="Module stack" loading="lazy"><figcaption><b>Module stack</b> of Blazing Leap: one action, five data and seven control modules.</figcaption></figure>
+    <figure><img src="img/m_effect.jpg" alt="Effect module" loading="lazy"><figcaption><b>Effect module</b> with a team-relation target filter (enemies only).</figcaption></figure>
+  </div>
+</div>
+
+<div class="breakdown" id="targeting">
+  <h3><span class="num">03</span>Targeting for any genre</h3>
+  <p>Aim never means "the camera". A <b>targeting source</b> produces the aim (screen centre for shooters, the cursor for top-down, MOBA and RTS play, the caster itself), a <b>range policy</b> clamps it, and <b>resolvers</b> turn it into targets: sphere, cone, cylinder, single, or a group of several. Team filters come from the teams plugin, so "enemies", "allies" or "self" are tags rather than code.</p>
+  <p><b>Target Pick</b> is the soft lock-on most hero shooters use for single-target abilities: the enemy closest to the crosshair, within range and in sight, is highlighted and taken. The client picks, because only it knows what the player saw; the server re-checks the choice with a small allowance for latency instead of trusting it. In a test with 200 ms of simulated latency, the server kept all 27 of the client's picks.</p>
+  <details><summary>Show code: the server's check of a client's pick</summary><pre><code>bool UPWTargetPick_ClosestToAim::Accept_Implementation(const AActor* Caster, const FPWTargetingResult&amp; Aim, AActor* Picked) const
+{
+	if (!Caster || !Picked)
+		return false;
+
+	// The same rules as the pick, with room for what latency moved: a little more range, twice the angle.
+	const float Range = GetRange();
+	if (!IsCandidate(Caster, Picked, Range &gt; 0.f ? Range * ServerRangeAllowance : 0.f))
+		return false;
+	const float Angle = FMath::Max(MaxAngle, bKeepTarget ? KeepAngle : 0.f);
+	return AngleFromAim(Caster, Aim, GetAimPoint(Picked)) &lt;= Angle * ServerAngleAllowance;
+}</code></pre></details>
+  <div class="two">
+    <figure><img src="img/play-drain.jpg" alt="Drain Life seen from another player: a red stream from a target dummy into the caster's hand" loading="lazy"><figcaption><b>Drain Life, seen by another player:</b> the caster locked onto the dummy nearest the crosshair and drains it into their hand.</figcaption></figure>
+    <figure><img src="img/m_target.jpg" alt="Targeting and resolver" loading="lazy"><figcaption><b>Targeting and resolver.</b> The sphere's radius is bound to the Radius module.</figcaption></figure>
+  </div>
+</div>
+
+<div class="breakdown" id="precast">
+  <h3><span class="num">04</span>Aim previews</h3>
+  <p>While a confirmed or charged ability is being aimed, the Precast module shows what will happen, using the same targeting and data the cast will use, so the preview can't disagree with the result. Visualizers can be combined: a <b>ground area</b> with a <b>target highlight</b>, <b>ghost actors</b> showing exactly what a pattern will spawn, or a <b>projectile path</b> that follows the projectile's real speed and gravity.</p>
+  <div class="two">
+    <figure><img src="img/play-meteor-aim.jpg" alt="Meteor Shower being aimed: an area on the ground and the dummy inside it highlighted" loading="lazy"><figcaption><b>Meteor Shower being aimed:</b> its radius on the ground, and the dummy inside it highlighted.</figcaption></figure>
+    <figure><img src="img/play-icewall-aim.jpg" alt="Ice Wall being aimed: translucent ghost pieces where the wall will rise" loading="lazy"><figcaption><b>Ice Wall being aimed:</b> ghost pieces where the wall will rise.</figcaption></figure>
+  </div>
+</div>
+
+<div class="breakdown" id="actions">
+  <h3><span class="num">05</span>Actions and spawn patterns</h3>
+  <p>Action modules do the work: an instant effect on resolved targets, one or many spawned actors, single or multiple projectiles, an aura, or starting other abilities so a combo can be split into parts. Where things appear is decided by <b>pattern objects</b>: line, circle, rings, grid and random for spawns; fan and random spread for projectiles. Counts can grow with the ability's level from a curve table, and spawns can snap to the ground, face the caster or run in sequence.</p>
+  <div class="two">
+    <figure><img src="img/play-ringoffire.jpg" alt="Ring of Fire: flame pieces placed in a ring around the caster" loading="lazy"><figcaption><b>Ring of Fire:</b> 20 pieces from a Rings pattern, snapped to the ground.</figcaption></figure>
+    <figure><img src="img/play-volley.jpg" alt="Volley: five bolts fanning out from the caster's hand" loading="lazy"><figcaption><b>Volley:</b> a fan of bolts, one more per level.</figcaption></figure>
+    <figure><img src="img/play-meteor.jpg" alt="Meteor Shower: meteors falling from the sky toward the target area" loading="lazy"><figcaption><b>Meteor Shower:</b> meteors spawned at random in the area, one after another.</figcaption></figure>
+    <figure><img src="img/play-leap.jpg" alt="Blazing Leap: the caster in mid-air over the target dummies" loading="lazy"><figcaption><b>Blazing Leap:</b> the Movement module's arc to the aim point, with damage on <i>Arrived</i>.</figcaption></figure>
+  </div>
+</div>
+
+<div class="breakdown" id="prediction">
+  <h3><span class="num">06</span>Client-side prediction</h3>
+  <p>GAS predicts ability activation and some effects; everything a framework adds on top usually waits for the server. In PW, a locally predicted ability predicts <b>all of its module work</b>: clocks (cast, charge, channel), effects on its targets, their removal, auras, and spawned actors.</p>
+  <ul>
+    <li><b>Spawn stand-ins:</b> the casting client spawns its own copy of a projectile or actor at once. When the server's actor arrives, it either takes the stand-in's place, or stays hidden while the stand-in finishes what it started. A rejected cast removes its stand-ins.</li>
+    <li><b>Clocks that agree:</b> a client whose channel ran its full length ends it locally, so the server's copy finishes on its own clock instead of being cut short by a late message.</li>
+    <li><b>Checked under latency:</b> features are played on a listen server with clients under 150–200 ms of simulated latency, comparing what each machine saw.</li>
+  </ul>
+  <details><summary>Show code: the server's actor meets the client's stand-in</summary><pre><code>void UPWStandInSubsystem::ServerActorArrived(AActor* Real, const int32 Key, const int32 Index, const bool bStandInStays)
+{
+	FEntry* Entry = Real &amp;&amp; Key != 0 ? Find(Real-&gt;GetOwner(), Key, Index) : nullptr;
+	if (!Entry || Entry-&gt;Real.IsValid())
+		return;
+
+	Entry-&gt;Real = Real;
+	if (Entry-&gt;bTakenBack)
+	{
+		Shadow(Real);
+		return;
+	}
+	// The stand-in showed its whole life here, ending where it ended: the server's is not shown, even once the stand-in is gone.
+	if (bStandInStays)
+	{
+		Entry-&gt;bStandInStays = true;
+		Shadow(Real);
+		return;
+	}
+	RemoveStandIn(*Entry);
+	Entry-&gt;bTookOver = true;
+}</code></pre></details>
+</div>
+
+<div class="breakdown" id="spellactors">
+  <h3><span class="num">07</span>Spell actors</h3>
+  <p>Actors an ability spawns receive its data: caster, team, radius, duration, the resolver to use and the effects to apply, so a totem, wall or projectile does its job without knowing which ability made it. Projectiles add piercing, per-target hit cooldowns, rules for meeting other projectiles, and shields that stop only enemies' projectiles.</p>
+  <p>When a spell actor ends, it no longer vanishes. Its collision, movement and timers stop at once, but its effects stop spawning and play out what they have. In multiplayer, the server's actor <i>tears off</i> as it ends, so every player's copy ends at that moment and removes itself once its own effects are done. In the shot below, the eruptions had already ended on the server; on the watching client, the cracks stayed another 3 to 3.7 seconds, until their effects finished.</p>
+  <details><summary>Show code: ending a spell actor</summary><pre><code>void APWSpellActor::EndSpell()
+{
+	if (bEnding || !IsValid(this) || !CanRemoveHere())
+		return;
+
+	if (FadeOutTime &lt;= 0.f)
+	{
+		Destroy();
+		return;
+	}
+
+	StopForEnd();
+	// Every player's copy ends with this one and then goes on its own once its effects are done; left to the server, it would vanish with it.
+	if (GetIsReplicated() &amp;&amp; !IsStandIn())
+		TearOff();
+	FinishIfDone();
+}
+
+void APWSpellActor::TornOff()
+{
+	Super::TornOff();
+
+	// The server's actor ended: this copy, now its own, ends as well and goes once its effects are done.
+	TellStandInsGone();
+	if (!bEnding)
+		StopForEnd();
+	FinishIfDone();
+}</code></pre></details>
+  <figure><img src="img/play-eruption.jpg" alt="Eruption Line seen from a watching player: a line of cracked ground and dust from the caster to two dummies" loading="lazy"><figcaption><b>Eruption Line, seen by another player:</b> six eruptions along the aim, each a small version of Earthshatter's slam. Their cracks and dust finish after the actors that made them have ended.</figcaption></figure>
+</div>
+
+<div class="breakdown" id="visuals">
+  <h3><span class="num">08</span>Animation and VFX</h3>
+  <ul>
+    <li><b>Montages by tag:</b> an ability names an animation by tag (<code>AnimMontage.SpellCast</code>), and each character's montage set supplies its own clip, so one ability works on different skeletons. Entries set start time, play rate, a fit-to-cast-time option and root motion scale. In the details panel, a button beside the tag opens the montage it resolves to.</li>
+    <li><b>VFX entries:</b> what to play, on which moments, and where: on the caster at a socket, where the ability acted, at the aim, or on the ground under the caster like an aura's ring. The caster plays its own at once, and the ability system component sends them to the other players; looping ones go reliably, so a stop reaches every machine.</li>
+    <li><b>Parameters without a graph:</b> each entry sets Niagara user parameters from ability values, so an effect is sized by the same numbers as the gameplay. A value is a constant (optionally from a curve table), the ability's level, a module's value, the cast time or a Blueprint variable, or math on two of them.</li>
+    <li><b>VFX points:</b> an effect can name points such as the caster's hand or the target. The points follow their actors every frame, which is how Drain Life's stream stays attached to both ends.</li>
+  </ul>
+  <figure style="max-width:983px"><img src="img/m_vfx.jpg" alt="Fire Nova's VFX module entry: NS_FireNova_Example played on every tick at the caster's root, its User.Radius parameter set to the Radius module minus 80, with the value menu open" loading="lazy"><figcaption><b>Fire Nova's VFX entry:</b> its ring plays on every channel tick at the caster's root. <code>User.Radius</code> is set to <i>Subtract</i>: the Radius module's Default entry minus 80, so the ring fits the damage area at every level, and keeps fitting as the ability's graph grows the radius during the channel. The open menu shows what a value can come from.</figcaption></figure>
+</div>
+
+<div class="breakdown" id="editor">
+  <h3><span class="num">09</span>Editor tools</h3>
+  <ul>
+    <li><b>The timeline</b> (interactive version above) is drawn from the modules as they are edited, at any level, with the character's real montage lengths.</li>
+    <li><b>Setup checks:</b> a setting that can't work as set gets a warning or error icon on its row, its list entry and its module, and the same note shows on the timeline and in asset validation. Examples: a module that needs another module, or an input entry nothing raises.</li>
+    <li><b>Live Tuning</b> edits the ability, its effects, data asset and curve table during play. Changes apply between casts, with undo/redo and save to defaults.</li>
+    <li><b>Debugging:</b> one checkbox per ability turns on each module's debug drawing and server logs; console commands and shortcuts do the same for every ability at once.</li>
+  </ul>
+  <figure><img src="img/live.jpg" alt="Live Tuning panel and debug drawing" loading="lazy"><figcaption><b>Live Tuning and debugging.</b> Meteor Shower in play-in-editor, with debug drawing of range, radius, aim and resolved targets and per-module server logs, and the Live Tuning panel open beside it.</figcaption></figure>
+  <figure style="margin-top:24px"><img src="img/meteor.jpg" alt="Editor timeline of Meteor Shower" loading="lazy"><figcaption><b>Meteor Shower's timeline:</b> inputs until confirm, a 1 s cast with its animation and VFX, then the meteors, cost paid at Cast Completed and the cooldown.</figcaption></figure>
+</div>
+
+</div></section>
+
+<section id="integration"><div class="wrap">
+  <div class="eyebrow">Integration</div>
+  <h2>Adding PW to an existing project</h2>
+  <p class="lead">PW sits on top of GAS rather than replacing it, so a project that already uses GAS keeps its abilities, effects and attributes and adopts PW one piece at a time.</p>
+  <div class="steps">
+    <div class="box"><span class="n">1</span><h3>Ability system component</h3><p>Use PW's component, or derive yours from it. Its additions (input handling, activation groups, effect delivery to other players, predicted removal) are separate helper objects inside it, so a subclass can change one without touching the rest.</p></div>
+    <div class="box"><span class="n">2</span><h3>Abilities, one at a time</h3><p>Plain GAS abilities keep working beside PW ones. An ability is moved over by reparenting it to a PW ability class, then replacing its graph logic with modules where they fit; the graph stays available for the rest.</p></div>
+    <div class="box"><span class="n">3</span><h3>Attributes and effects</h3><p>Existing attribute sets and effects stay as they are. PW's attribute base class is optional: it replicates every attribute without per-attribute boilerplate, finds attributes by tag and clamps one attribute to another.</p></div>
+    <div class="box"><span class="n">4</span><h3>Input</h3><p>Abilities are pressed by input tag. PW's input router maps Enhanced Input actions to tags from a data asset, or a project's own input code can send the tags directly.</p></div>
+    <div class="box"><span class="n">5</span><h3>Characters and targets</h3><p>Characters get a montage set (animations by tag, per skeleton) and, optionally, tag-driven status visuals. Anything that can be hit implements one interface, so walls and props can take effects without an ability system of their own.</p></div>
+    <div class="box"><span class="n">6</span><h3>Teams and game rules</h3><p>A team agent on each pawn enables enemy, ally and self filters. Team rules and the ability registry are chosen per game mode rather than in project settings, so one project can hold several kinds of game.</p></div>
+  </div>
+  <p class="note">The main thing to watch is another plugin that also replaces the ability system component. PW's abilities still run on a different component, but the features above quietly stop. The plan is a clear warning when that happens, and an interface so another plugin's component can host PW's helpers without reparenting one component under the other.</p>
+</div></section>
+
+<section id="roadmap"><div class="wrap">
+  <div class="eyebrow">What's next</div>
+  <h2>Road to release</h2>
+  <!-- TODO: add the planned release date here once it's set. -->
+  <div class="phases">
+    <div class="box"><h3>Example abilities pass <span class="status done">Done</span></h3><p>Every example ability was checked for prediction, networking, smooth visuals and intended behaviour, and the framework was fixed or extended where they needed it. Target Pick, VFX points and the spell actor fade-out all came out of this pass.</p></div>
+    <div class="box"><h3>Spell actor helpers <span class="status">Next</span></h3>
+      <p>Actors won't be fully codeless the way abilities are: what a totem, a wall and a homing missile do differs far more than how abilities are cast. Instead, the base classes get helpers that cover the common work, so a typical actor needs only a small graph:</p>
+      <ul>
+        <li><b>Pulsing zones</b> that apply their effects on an interval without a graph (totems, burning ground, rings of fire).</li>
+        <li><b>Data into effects:</b> the values an actor carries (cone length and angle, radius, duration) passed into its Niagara parameters, so effects size themselves.</li>
+        <li><b>Target filters</b> on a resolver's result: by team, by count, or sorted by distance or an attribute, such as the closest enemy or the lowest-health ally in range.</li>
+        <li><b>Homing</b> toward the target Target Pick chose, and a <b>rise from the ground</b> option that lifts anyone standing on a wall as it rises.</li>
+      </ul></div>
+    <div class="box"><h3>Clean-up and packaging <span class="status">Planned</span></h3><p>The plugins merged into one Fab package, leftover compatibility code removed, and every asset re-saved under its final names.</p></div>
+    <div class="box"><h3>Attribute and UI helpers <span class="status">Planned</span></h3><p>A balancing helper that runs the damage numbers and shows hits-to-defeat, and helper functions for ability info, cooldowns and attribute binding. The widgets themselves stay in the example project; PW is an ability framework, not a UI kit.</p></div>
+    <div class="box"><h3>Ease of setup <span class="status">Planned</span></h3><p>Base classes or a component for the player state and character work that is C++ today, and a setup check that lists what a project is missing. The goal: from an empty project to a first working ability in under ten minutes, timed on a fresh project.</p></div>
+    <div class="box"><h3>Examples for other genres <span class="status">Planned</span></h3><p>The same abilities with other targeting: mouse-driven play in the style of classic MMOs, and top-down MOBA controls, alongside today's third-person shooter setup.</p></div>
+    <div class="box"><h3>Documentation and release <span class="status">Planned</span></h3><p>Every module explained, with how to write your own, the helpers, and how the pieces connect. Then a final pass through the running test plan, and the Fab release.</p></div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">© 2026 Metehan Göksel Kurtulan · <a href="mailto:metehankurtulan@gmail.com">metehankurtulan@gmail.com</a></div></footer>
+<script src="assets/abilities.js"></script>
+<script src="assets/timeline.js"></script>
+</body>
+</html>
